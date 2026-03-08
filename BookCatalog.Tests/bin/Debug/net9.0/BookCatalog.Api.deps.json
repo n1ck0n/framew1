@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "BookCatalog.Api/1.0.0": {
+        "runtime": {
+          "BookCatalog.Api.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BookCatalog.Api/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
