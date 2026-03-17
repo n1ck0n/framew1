@@ -28,12 +28,14 @@ dotnet test BookCatalog.Tests
 
 ---
 
-## Ручной прогон сценариев
+## Ручной прогон сценариев (PowerShell)
+
+Все команды используют `Invoke-RestMethod` (встроенный cmdlet PowerShell) для корректной работы с JSON.
 
 ### 1. Получить список книг (изначально пуст)
 
-```bash
-curl -s http://localhost:5000/api/books | jq
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/books" -Method Get | ConvertTo-Json
 ```
 
 Ожидаемый ответ: `[]`
@@ -42,18 +44,16 @@ curl -s http://localhost:5000/api/books | jq
 
 ### 2. Создать книгу
 
-```bash
-curl -s -X POST http://localhost:5000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Мастер и Маргарита","author":"Михаил Булгаков","year":1967,"price":320}' | jq
+```powershell
+$body = '{"title":"The Master and Margarita","author":"Mikhail Bulgakov","year":1967,"price":320}'; Invoke-RestMethod -Uri "http://localhost:5000/api/books" -Method Post -Body $body -ContentType "application/json" | ConvertTo-Json
 ```
 
 Ожидаемый ответ (HTTP 201):
 ```json
 {
   "id": "...",
-  "title": "Мастер и Маргарита",
-  "author": "Михаил Булгаков",
+  "title": "The Master and Margarita",
+  "author": "Mikhail Bulgakov",
   "year": 1967,
   "price": 320
 }
@@ -65,17 +65,21 @@ curl -s -X POST http://localhost:5000/api/books \
 
 ### 3. Получить книгу по идентификатору
 
-```bash
+```powershell
 # Замените {ID} на значение из предыдущего шага
-curl -s http://localhost:5000/api/books/{ID} | jq
+Invoke-RestMethod -Uri "http://localhost:5000/api/books/{ID}" -Method Get | ConvertTo-Json
 ```
 
 ---
 
 ### 4. Запрос по несуществующему идентификатору → 404
 
-```bash
-curl -s http://localhost:5000/api/books/00000000-0000-0000-0000-000000000000 | jq
+```powershell
+try {
+    Invoke-RestMethod -Uri "http://localhost:5000/api/books/00000000-0000-0000-0000-000000000000" -Method Get -ErrorAction Stop | ConvertTo-Json
+} catch {
+    $_.Exception.Response | Format-List
+}
 ```
 
 Ожидаемый ответ (HTTP 404):
@@ -91,10 +95,8 @@ curl -s http://localhost:5000/api/books/00000000-0000-0000-0000-000000000000 | j
 
 ### 5. Создать книгу с пустым названием → 422
 
-```bash
-curl -s -X POST http://localhost:5000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{"title":"","author":"Автор","year":2020,"price":100}' | jq
+```powershell
+$body = '{"title":"","author":"Author","year":2020,"price":100}'; Invoke-RestMethod -Uri "http://localhost:5000/api/books" -Method Post -Body $body -ContentType "application/json" | ConvertTo-Json
 ```
 
 Ожидаемый ответ (HTTP 422):
@@ -110,26 +112,29 @@ curl -s -X POST http://localhost:5000/api/books \
 
 ### 6. Создать книгу с отрицательной ценой → 422
 
-```bash
-curl -s -X POST http://localhost:5000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Книга","author":"Автор","year":2020,"price":-10}' | jq
+```powershell
+$body = '{"title":"Book","author":"Author","year":2020,"price":-10}'; Invoke-RestMethod -Uri "http://localhost:5000/api/books" -Method Post -Body $body -ContentType "application/json" | ConvertTo-Json
 ```
 
 ---
 
 ### 7. Фильтрация по названию
 
-```bash
-curl -s "http://localhost:5000/api/books?title=Мастер" | jq
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/books?title=Master" -Method Get | ConvertTo-Json
 ```
 
 ---
 
 ### 8. Посмотреть заголовок X-Request-Id
 
-```bash
-curl -si http://localhost:5000/api/books | grep -i x-request-id
+```powershell
+Invoke-WebRequest -Uri "http://localhost:5000/api/books" -Method Get -UseBasicParsing | Select-Object -ExpandProperty Headers | Select-Object "X-Request-Id"
+```
+
+Или более кратко:
+```powershell
+(Invoke-WebRequest -Uri "http://localhost:5000/api/books" -UseBasicParsing).Headers["X-Request-Id"]
 ```
 
 ---
@@ -156,3 +161,4 @@ curl -si http://localhost:5000/api/books | grep -i x-request-id
 | author | Непустая строка                                   |
 | year   | Целое число в диапазоне 1450 — текущий год        |
 | price  | Неотрицательное число                             |
+```
